@@ -1,0 +1,16 @@
+{
+  "settings": {
+    "currentAssetEok": 4.1,
+    "targetAssetEok": 20.0,
+    "annualReturnPct": 30.0,
+    "monthlyDepositMan": 0,
+    "aggressiveSharePct": 60,
+    "incomeUsePctOfExpectedReturn": 80
+  },
+  "strategy": {
+    "under10CashRule": "10% 초과 → 6~6.5%",
+    "between10And20CashRule": "14% 초과 → 5~6%",
+    "after20Allocation": "60:20:20"
+  },
+  "history": []
+}
