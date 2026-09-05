@@ -23,6 +23,11 @@
   .progress>div{height:100%;width:20%;background:linear-gradient(90deg,var(--accent),var(--good));border-radius:999px;transition:width .25s ease}
   .progress-row{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
   .section-title{font-size:15px;font-weight:750;margin:4px 0 10px}
+  details.assumptions>summary{cursor:pointer;list-style:none;user-select:none;margin-bottom:0}
+  details.assumptions>summary::-webkit-details-marker{display:none}
+  details.assumptions>summary::after{content:"▼";float:right;color:var(--muted);font-size:12px;transition:transform .2s ease}
+  details.assumptions[open]>summary{margin-bottom:10px}
+  details.assumptions[open]>summary::after{transform:rotate(180deg)}
   .assumptions,.chart-card,.milestones,.history,.note{grid-column:1/-1}
   .assumption-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .assumption{background:#0a1017;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
@@ -69,8 +74,8 @@
       <div class="goal" id="incomeNote">-</div>
     </section>
 
-    <section class="card assumptions">
-      <div class="section-title">현재 가정</div>
+    <details class="card assumptions">
+      <summary class="section-title">현재 가정</summary>
       <div class="assumption-grid">
         <div class="assumption"><div class="label">연평균 기대수익률</div><strong id="returnDisplay">-</strong></div>
         <div class="assumption"><div class="label">월 추가입금</div><strong id="depositDisplay">-</strong></div>
@@ -79,7 +84,7 @@
         <div class="assumption"><div class="label">20억 이후 배분</div><strong id="allocationRule">-</strong></div>
         <div class="assumption"><div class="label">월 소득 계산 기준</div><strong id="incomeRule">-</strong></div>
       </div>
-    </section>
+    </details>
 
     <section class="card chart-card">
       <div class="section-title">실제 기록 + 목표 예상 경로</div>
