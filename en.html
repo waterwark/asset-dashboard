@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#0b0f14" />
+<title>KRW 2B Asset Goal Dashboard</title>
+<style>
+  :root{--bg:#0b0f14;--card:#121922;--text:#f4f7fb;--muted:#9aa8b7;--line:#26313d;--accent:#4da3ff;--good:#49d17d;--warn:#ffd166;--danger:#ff6b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,#0b0f14 0%,#0d131a 100%);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:18px 14px 40px}
+  h1{margin:4px 0 4px;font-size:24px;letter-spacing:-.03em}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+  .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .card{background:rgba(18,25,34,.95);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+  .hero{grid-column:1/-1;padding:18px}
+  .label{color:var(--muted);font-size:12px;margin-bottom:5px}
+  .value{font-size:24px;font-weight:800;letter-spacing:-.03em}
+  .hero .value{font-size:34px}
+  .goal{color:var(--muted);font-size:13px;margin-top:3px}
+  .progress{height:12px;background:#0a0f15;border-radius:999px;margin:16px 0 8px;overflow:hidden;border:1px solid #1f2a35}
+  .progress>div{height:100%;width:20%;background:linear-gradient(90deg,var(--accent),var(--good));border-radius:999px;transition:width .25s ease}
+  .progress-row{display:flex;justify-content:space-between;color:var(--muted);font-size:12px}
+  .section-title{font-size:15px;font-weight:750;margin:4px 0 10px}
+  details.assumptions>summary{cursor:pointer;list-style:none;user-select:none;margin-bottom:0}
+  details.assumptions>summary::-webkit-details-marker{display:none}
+  details.assumptions>summary::after{content:"▼";float:right;color:var(--muted);font-size:12px;transition:transform .2s ease}
+  details.assumptions[open]>summary{margin-bottom:10px}
+  details.assumptions[open]>summary::after{transform:rotate(180deg)}
+  .assumptions,.chart-card,.milestones,.history,.note{grid-column:1/-1}
+  .assumption-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .assumption{background:#0a1017;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .assumption strong{display:block;font-size:16px;margin-top:3px}
+  canvas{width:100%;height:320px;display:block;border-radius:14px;background:linear-gradient(180deg,#0d141c 0%,#0b1016 100%)}
+  .legend{display:flex;flex-wrap:wrap;gap:12px;margin:10px 3px 4px;color:var(--muted);font-size:12px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}.b{background:var(--accent)}.g{background:var(--good)}.y{background:var(--warn)}
+  .mile{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
+  .mile:last-child{border-bottom:none}.mile strong{font-size:14px}.mile small{color:var(--muted)}.date{font-weight:750;font-size:13px}
+  .history-list{display:flex;flex-direction:column;gap:7px}.hitem{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);background:#0a1017;border-radius:10px;font-size:12px}
+  .empty{color:var(--muted);font-size:12px;padding:9px 0}
+  .note{color:var(--muted);font-size:12px;line-height:1.55}
+  .error{display:none;grid-column:1/-1;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.45);color:#ffb3b3;border-radius:14px;padding:12px;font-size:13px;line-height:1.5}
+  .footer{color:#6f7d8b;font-size:11px;text-align:center;margin-top:16px}
+  @media(max-width:460px){.wrap{padding:14px 10px 30px}h1{font-size:22px}.hero .value{font-size:31px}.grid{gap:8px}.card{border-radius:16px}canvas{height:280px}.assumption-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>KRW 2B Asset Goal</h1>
+  <div class="sub">Public read-only dashboard · values are managed in data.json</div>
+
+  <div class="grid">
+    <div class="error" id="errorBox"></div>
+
+    <section class="card hero">
+      <div class="label">Current Assets</div>
+      <div class="value" id="currentDisplay">-</div>
+      <div class="goal">Goal <strong id="targetDisplay">-</strong></div>
+      <div class="progress"><div id="progressBar"></div></div>
+      <div class="progress-row"><span id="progressText">-</span><span id="remainingText">-</span></div>
+    </section>
+
+    <section class="card"><div class="label">Time to KRW 500M</div><div class="value" id="years5Display">-</div><div class="goal" id="months5Display">-</div></section>
+    <section class="card"><div class="label">Estimated KRW 500M Date</div><div class="value" id="date5Display" style="font-size:20px">-</div><div class="goal">Based on current assumptions</div></section>
+    <section class="card"><div class="label">Time to KRW 1B</div><div class="value" id="years10Display">-</div><div class="goal" id="months10Display">-</div></section>
+    <section class="card"><div class="label">Estimated KRW 1B Date</div><div class="value" id="date10Display" style="font-size:20px">-</div><div class="goal">Based on current assumptions</div></section>
+    <section class="card"><div class="label">Time to KRW 2B</div><div class="value" id="yearsDisplay">-</div><div class="goal" id="monthsDisplay">-</div></section>
+    <section class="card"><div class="label">Estimated KRW 2B Date</div><div class="value" id="dateDisplay" style="font-size:20px">-</div><div class="goal">Based on current assumptions</div></section>
+
+    <section class="card hero">
+      <div class="label">Estimated Monthly Income After KRW 2B</div>
+      <div class="value" id="incomeDisplay">-</div>
+      <div class="goal" id="incomeNote">-</div>
+    </section>
+
+    <details class="card assumptions">
+      <summary class="section-title">Current Assumptions</summary>
+      <div class="assumption-grid">
+        <div class="assumption"><div class="label">Expected Annual Return</div><strong id="returnDisplay">-</strong></div>
+        <div class="assumption"><div class="label">Monthly Contribution</div><strong id="depositDisplay">-</strong></div>
+        <div class="assumption"><div class="label">Cash Rule Below KRW 1B</div><strong id="under10Rule">-</strong></div>
+        <div class="assumption"><div class="label">Cash Rule: KRW 1B–2B</div><strong id="betweenRule">-</strong></div>
+        <div class="assumption"><div class="label">Allocation After KRW 2B</div><strong id="allocationRule">-</strong></div>
+        <div class="assumption"><div class="label">Monthly Income Formula</div><strong id="incomeRule">-</strong></div>
+      </div>
+    </details>
+
+    <section class="card chart-card">
+      <div class="section-title">Actual History + Projected Path</div>
+      <canvas id="chart"></canvas>
+      <div class="legend"><span><i class="dot g"></i>Actual Assets</span><span><i class="dot b"></i>Projected Assets</span><span><i class="dot y"></i>KRW 1B</span></div>
+    </section>
+
+    <section class="card milestones">
+      <div class="section-title">Milestones</div>
+      <div class="mile"><strong>KRW 500M</strong><small>First milestone</small><span class="date" id="m5">-</span></div>
+      <div class="mile"><strong>KRW 1B</strong><small id="m10Note">-</small><span class="date" id="m10">-</span></div>
+      <div class="mile"><strong>KRW 2B</strong><small id="m20Note">-</small><span class="date" id="m20">-</span></div>
+    </section>
+
+    <section class="card history">
+      <div class="section-title">Actual Asset History</div>
+      <div class="label">Entries from the data.json history array are shown by date. The most recent entry overrides currentAssetEok.</div>
+      <div class="history-list" id="historyList"></div>
+    </section>
+
+    <section class="note">
+      ※ The projected path is a simple compound-growth simulation assuming a constant annual return and monthly contribution. Actual investment returns can vary significantly from year to year.
+      This page is read-only and does not store data in the browser. Public values are changed only in data.json.
+    </section>
+  </div>
+  <div class="footer">Asset Goal Dashboard v8 · GitHub Pages + data.json</div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const canvas = $("chart");
+const ctx = canvas.getContext("2d");
+let DATA = null;
+
+function wonText(eok){
+  if(!isFinite(eok)) return "-";
+  if(eok >= 10){
+    const b=Math.round((eok/10)*100)/100;
+    return `₩${b.toLocaleString("en-US")}B`;
+  }
+  const m=Math.round(eok*100);
+  return `₩${m.toLocaleString("en-US")}M`;
+}
+function parseDate(s){ const d=new Date(`${s}T00:00:00`); return isNaN(d)?null:d; }
+function addMonths(date,months){ const d=new Date(date); d.setMonth(d.getMonth()+months); return d; }
+function fmtDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`; }
+function monthDiff(a,b){ return (b-a)/(1000*60*60*24*30.4375); }
+
+function getHistory(){
+  const rows=Array.isArray(DATA?.history)?DATA.history:[];
+  return rows.map(r=>({date:String(r.date||""),assetEok:Number(r.assetEok)}))
+    .filter(r=>parseDate(r.date)&&isFinite(r.assetEok)&&r.assetEok>0)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+}
+function getCurrentAsset(){
+  const hist=getHistory();
+  if(hist.length) return hist[hist.length-1].assetEok;
+  return Number(DATA?.settings?.currentAssetEok)||0;
+}
+function getBaseDate(){
+  const hist=getHistory();
+  if(hist.length) return parseDate(hist[hist.length-1].date);
+  return new Date();
+}
+function calcMonthsToTarget(startEok,targetEok,annualPct,depositMan){
+  if(startEok>=targetEok) return 0;
+  const monthlyRate=Math.pow(1+annualPct/100,1/12)-1;
+  const depositEok=depositMan/10000;
+  let asset=startEok;
+  for(let m=1;m<=1200;m++){
+    asset=asset*(1+monthlyRate)+depositEok;
+    if(asset>=targetEok) return m;
+  }
+  return Infinity;
+}
+function durationText(months){
+  if(!isFinite(months)) return "Unable to calculate";
+  if(months===0) return "Reached";
+  const y=Math.floor(months/12),m=months%12;
+  return y?`${y}y ${m}mo`:`${m}mo`;
+}
+
+function resizeCanvas(){
+  const rect=canvas.getBoundingClientRect();
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  canvas.width=Math.floor(rect.width*dpr);canvas.height=Math.floor(rect.height*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+function drawLine(points,color,width=2.5,dashed=false){
+  if(!points.length)return;ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;if(dashed)ctx.setLineDash([6,6]);ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.restore();
+}
+function drawChart(){
+  if(!DATA)return;
+  resizeCanvas();
+  const rect=canvas.getBoundingClientRect(),W=rect.width,H=rect.height;
+  ctx.clearRect(0,0,W,H);
+  const pad={l:44,r:14,t:18,b:32},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const s=DATA.settings||{};
+  const cur=getCurrentAsset(),target=Number(s.targetAssetEok)||20,r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0;
+  const baseDate=getBaseDate();
+  const hist=getHistory().map(h=>({d:parseDate(h.date),asset:h.assetEok}));
+  const firstDate=hist.length?hist[0].d:baseDate;
+  const projMonths=calcMonthsToTarget(cur,target,r,dep);
+  const horizonMonths=isFinite(projMonths)?Math.max(12,projMonths):120;
+  const projEnd=addMonths(baseDate,horizonMonths);
+  const totalMonths=Math.max(1,monthDiff(firstDate,projEnd));
+  const monthlyRate=Math.pow(1+r/100,1/12)-1,depEok=dep/10000;
+  let a=cur;const proj=[];
+  for(let m=0;m<=horizonMonths;m++){ if(m>0)a=a*(1+monthlyRate)+depEok;proj.push({d:addMonths(baseDate,m),asset:a}); }
+  const allAssets=[target,...hist.map(h=>h.asset),...proj.map(p=>p.asset)];
+  let maxY=Math.max(...allAssets)*1.08;
+  const xDate=d=>pad.l+(Math.max(0,Math.min(totalMonths,monthDiff(firstDate,d)))/totalMonths)*cw;
+  const y=v=>pad.t+ch-(v/maxY)*ch;
+
+  ctx.strokeStyle="#24303b";ctx.lineWidth=1;ctx.fillStyle="#8794a3";ctx.font="11px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";
+  for(let i=0;i<=4;i++){const val=maxY*i/4,yy=y(val);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.fillText(wonText(val),pad.l-7,yy);}
+  ctx.textAlign="center";ctx.textBaseline="top";
+  for(let i=0;i<=4;i++){const d=new Date(firstDate.getTime()+(projEnd-firstDate)*i/4),xx=xDate(d);ctx.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`,xx,H-pad.b+8);}
+  const milestoneLine=(val,color,label)=>{if(val>maxY)return;const yy=y(val);ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.textAlign="left";ctx.textBaseline="bottom";ctx.fillText(label,pad.l+6,yy-4);ctx.restore();};
+  milestoneLine(10,"#ffd166","KRW 1B");milestoneLine(target,"#49d17d",`${wonText(target)} Goal`);
+  drawLine(proj.map(p=>({x:xDate(p.d),y:y(p.asset)})),"#4da3ff",3);
+  if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2.2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
+}
+
+function renderHistory(){
+  const list=$("historyList"),rows=getHistory();list.innerHTML="";
+  if(!rows.length){list.innerHTML='<div class="empty">No records · add entries to the history array in data.json.</div>';return;}
+  [...rows].reverse().forEach(r=>{const div=document.createElement("div");div.className="hitem";div.innerHTML=`<span>${r.date}</span><strong>${wonText(r.assetEok)}</strong>`;list.appendChild(div);});
+}
+
+function update(){
+  const s=DATA.settings||{},st=DATA.strategy||{};
+  const cur=getCurrentAsset(),target=Number(s.targetAssetEok)||20,r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0,baseDate=getBaseDate();
+  const aggressive=(Number(s.aggressiveSharePct)||60)/100;
+  const incomeUse=(Number(s.incomeUsePctOfExpectedReturn)||80)/100;
+  $("currentDisplay").textContent=wonText(cur);$("targetDisplay").textContent=wonText(target);
+  const pct=Math.min(100,target?cur/target*100:0);$("progressBar").style.width=`${pct}%`;$("progressText").textContent=`${pct.toFixed(1)}% reached`;$("remainingText").textContent=cur>=target?"Goal reached":`${wonText(target-cur)} remaining`;
+  const fillMilestone=(milestone,yearsId,monthsId,dateId)=>{const m=calcMonthsToTarget(cur,milestone,r,dep);$(yearsId).textContent=durationText(m);$(monthsId).textContent=cur>=milestone?`${wonText(milestone)} or more`:isFinite(m)?`From current assets · ${m} months`:"Check return/contribution";$(dateId).textContent=cur>=milestone?"Already reached":isFinite(m)?fmtDate(addMonths(baseDate,m)):"-";return m;};
+  const m5=fillMilestone(5,"years5Display","months5Display","date5Display");
+  const m10=fillMilestone(10,"years10Display","months10Display","date10Display");
+  const mt=fillMilestone(target,"yearsDisplay","monthsDisplay","dateDisplay");
+  const incomeMan=target*10000*aggressive*(r/100)*incomeUse/12;
+  $("incomeDisplay").textContent=`₩${Math.round(incomeMan*10000).toLocaleString("en-US")}/month`;
+  $("incomeNote").textContent=`${wonText(target)} × aggressive allocation ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return ÷ 12 · before tax`;
+  $("returnDisplay").textContent=`${r}%`;$("depositDisplay").textContent=`₩${Math.round(dep*10000).toLocaleString("en-US")}/month`;
+  $("under10Rule").textContent=st.under10CashRule||"-";$("betweenRule").textContent=st.between10And20CashRule||"-";$("allocationRule").textContent=st.after20Allocation||"-";$("incomeRule").textContent=`Aggressive ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return`;
+  $("m10Note").textContent=st.between10And20CashRule?`Dynamic cash: ${st.between10And20CashRule}`:"-";$("m20Note").textContent=st.after20Allocation?`${st.after20Allocation} allocation`:"-";
+  $("m5").textContent=cur>=5?"Already reached":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
+  $("m10").textContent=cur>=10?"Already reached":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
+  $("m20").textContent=cur>=20?"Already reached":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
+  renderHistory();drawChart();
+}
+
+async function loadData(){
+  try{
+    const res=await fetch(`data.json?v=${Date.now()}`,{cache:"no-store"});
+    if(!res.ok)throw new Error(`HTTP ${res.status}`);
+    DATA=await res.json();
+    update();
+  }catch(err){
+    const box=$("errorBox");box.style.display="block";box.textContent="Could not load data.json. On GitHub Pages, place en.html and data.json in the same folder. Opening the file directly with file:// may block fetch because of browser security policies.";
+    console.error(err);
+  }
+}
+window.addEventListener("resize",()=>DATA&&drawChart());
+loadData();
+</script>
+</body>
+</html>
