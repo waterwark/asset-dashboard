@@ -56,6 +56,7 @@
     <section class="card hero">
       <div class="label">현재 자산</div>
       <div class="value" id="currentDisplay">-</div>
+      <div class="goal" id="updatedDisplay">최근 업데이트: -</div>
       <div class="goal">목표 <strong id="targetDisplay">-</strong></div>
       <div class="progress"><div id="progressBar"></div></div>
       <div class="progress-row"><span id="progressText">-</span><span id="remainingText">-</span></div>
@@ -118,7 +119,7 @@
       이 페이지는 읽기 전용이며 브라우저에 데이터를 저장하지 않습니다. 공개값 수정은 data.json에서만 합니다.
     </section>
   </div>
-  <div class="footer">Asset Goal Dashboard v9 · GitHub Pages + data.json</div>
+  <div class="footer">Asset Goal Dashboard v10 · GitHub Pages + data.json</div>
 </div>
 
 <script>
@@ -137,6 +138,7 @@ function wonText(eok){
 function parseDate(s){ const d=new Date(`${s}T00:00:00`); return isNaN(d)?null:d; }
 function addMonths(date,months){ const d=new Date(date); d.setMonth(d.getMonth()+months); return d; }
 function fmtDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`; }
+function fmtFullDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; }
 function monthDiff(a,b){ return (b-a)/(1000*60*60*24*30.4375); }
 function monthSerial(d){ return d.getFullYear()*12+d.getMonth(); }
 function dateFromMonthSerial(v){ const y=Math.floor(v/12),m=v%12; return new Date(y,m,1); }
@@ -156,6 +158,10 @@ function getBaseDate(){
   const hist=getHistory();
   if(hist.length) return parseDate(hist[hist.length-1].date);
   return new Date();
+}
+function getMilestoneReachedDate(milestone){
+  const row=getHistory().find(r=>r.assetEok>=milestone);
+  return row?parseDate(row.date):null;
 }
 function calcMonthsToTarget(startEok,targetEok,annualPct,depositMan){
   if(startEok>=targetEok) return 0;
@@ -298,7 +304,9 @@ function update(){
   const cur=getCurrentAsset(),target=Number(s.targetAssetEok)||20,r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0,baseDate=getBaseDate();
   const aggressive=(Number(s.aggressiveSharePct)||60)/100;
   const incomeUse=(Number(s.incomeUsePctOfExpectedReturn)||80)/100;
+  const hist=getHistory(),latest=hist.length?hist[hist.length-1]:null;
   $("currentDisplay").textContent=wonText(cur);$("targetDisplay").textContent=wonText(target);
+  $("updatedDisplay").textContent=latest?`최근 업데이트: ${fmtFullDate(parseDate(latest.date))}`:"최근 업데이트: 기록 없음";
   const pct=Math.min(100,target?cur/target*100:0);$("progressBar").style.width=`${pct}%`;$("progressText").textContent=`${pct.toFixed(1)}% 달성`;$("remainingText").textContent=cur>=target?"목표 달성":`${wonText(target-cur)} 남음`;
   const fillMilestone=(milestone,yearsId,monthsId,dateId)=>{const m=calcMonthsToTarget(cur,milestone,r,dep);$(yearsId).textContent=durationText(m);$(monthsId).textContent=cur>=milestone?`${milestone}억 이상`:isFinite(m)?`현재 자산 기준 · ${m}개월`:"수익률·입금액 확인";$(dateId).textContent=cur>=milestone?"이미 달성":isFinite(m)?fmtDate(addMonths(baseDate,m)):"-";return m;};
   const m5=fillMilestone(5,"years5Display","months5Display","date5Display");
@@ -310,9 +318,10 @@ function update(){
   $("returnDisplay").textContent=`${r}%`;$("depositDisplay").textContent=`${dep.toLocaleString("ko-KR")}만원/월`;
   $("under10Rule").textContent=st.under10CashRule||"-";$("betweenRule").textContent=st.between10And20CashRule||"-";$("allocationRule").textContent=st.after20Allocation||"-";$("incomeRule").textContent=`공격 ${Math.round(aggressive*100)}% × 기대수익의 ${Math.round(incomeUse*100)}%`;
   $("m10Note").textContent=st.between10And20CashRule?`동적 현금 ${st.between10And20CashRule}`:"-";$("m20Note").textContent=st.after20Allocation?`${st.after20Allocation} 전환 기준`:"-";
-  $("m5").textContent=cur>=5?"이미 달성":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
-  $("m10").textContent=cur>=10?"이미 달성":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
-  $("m20").textContent=cur>=20?"이미 달성":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
+  const reached5=getMilestoneReachedDate(5),reached10=getMilestoneReachedDate(10),reached20=getMilestoneReachedDate(20);
+  $("m5").textContent=reached5?`달성 ${fmtFullDate(reached5)}`:cur>=5?"이미 달성":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
+  $("m10").textContent=reached10?`달성 ${fmtFullDate(reached10)}`:cur>=10?"이미 달성":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
+  $("m20").textContent=reached20?`달성 ${fmtFullDate(reached20)}`:cur>=20?"이미 달성":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
   renderHistory();drawChart();drawTargetDateChart();
 }
 

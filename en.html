@@ -56,6 +56,7 @@
     <section class="card hero">
       <div class="label">Current Assets</div>
       <div class="value" id="currentDisplay">-</div>
+      <div class="goal" id="updatedDisplay">Last updated: -</div>
       <div class="goal">Goal <strong id="targetDisplay">-</strong></div>
       <div class="progress"><div id="progressBar"></div></div>
       <div class="progress-row"><span id="progressText">-</span><span id="remainingText">-</span></div>
@@ -119,7 +120,7 @@
       This page is read-only and does not store data in the browser. Public values are changed only in data.json.
     </section>
   </div>
-  <div class="footer">Asset Goal Dashboard v9 · GitHub Pages + data.json</div>
+  <div class="footer">Asset Goal Dashboard v10 · GitHub Pages + data.json</div>
 </div>
 
 <script>
@@ -142,6 +143,7 @@ function wonText(eok){
 function parseDate(s){ const d=new Date(`${s}T00:00:00`); return isNaN(d)?null:d; }
 function addMonths(date,months){ const d=new Date(date); d.setMonth(d.getMonth()+months); return d; }
 function fmtDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`; }
+function fmtFullDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; }
 function monthDiff(a,b){ return (b-a)/(1000*60*60*24*30.4375); }
 function monthSerial(d){ return d.getFullYear()*12+d.getMonth(); }
 function dateFromMonthSerial(v){ const y=Math.floor(v/12),m=v%12; return new Date(y,m,1); }
@@ -161,6 +163,10 @@ function getBaseDate(){
   const hist=getHistory();
   if(hist.length) return parseDate(hist[hist.length-1].date);
   return new Date();
+}
+function getMilestoneReachedDate(milestone){
+  const row=getHistory().find(r=>r.assetEok>=milestone);
+  return row?parseDate(row.date):null;
 }
 function calcMonthsToTarget(startEok,targetEok,annualPct,depositMan){
   if(startEok>=targetEok) return 0;
@@ -303,7 +309,9 @@ function update(){
   const cur=getCurrentAsset(),target=Number(s.targetAssetEok)||20,r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0,baseDate=getBaseDate();
   const aggressive=(Number(s.aggressiveSharePct)||60)/100;
   const incomeUse=(Number(s.incomeUsePctOfExpectedReturn)||80)/100;
+  const hist=getHistory(),latest=hist.length?hist[hist.length-1]:null;
   $("currentDisplay").textContent=wonText(cur);$("targetDisplay").textContent=wonText(target);
+  $("updatedDisplay").textContent=latest?`Last updated: ${fmtFullDate(parseDate(latest.date))}`:"Last updated: no history";
   const pct=Math.min(100,target?cur/target*100:0);$("progressBar").style.width=`${pct}%`;$("progressText").textContent=`${pct.toFixed(1)}% reached`;$("remainingText").textContent=cur>=target?"Goal reached":`${wonText(target-cur)} remaining`;
   const fillMilestone=(milestone,yearsId,monthsId,dateId)=>{const m=calcMonthsToTarget(cur,milestone,r,dep);$(yearsId).textContent=durationText(m);$(monthsId).textContent=cur>=milestone?`${wonText(milestone)} or more`:isFinite(m)?`From current assets · ${m} months`:"Check return/contribution";$(dateId).textContent=cur>=milestone?"Already reached":isFinite(m)?fmtDate(addMonths(baseDate,m)):"-";return m;};
   const m5=fillMilestone(5,"years5Display","months5Display","date5Display");
@@ -315,9 +323,10 @@ function update(){
   $("returnDisplay").textContent=`${r}%`;$("depositDisplay").textContent=`₩${Math.round(dep*10000).toLocaleString("en-US")}/month`;
   $("under10Rule").textContent=st.under10CashRule||"-";$("betweenRule").textContent=st.between10And20CashRule||"-";$("allocationRule").textContent=st.after20Allocation||"-";$("incomeRule").textContent=`Aggressive ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return`;
   $("m10Note").textContent=st.between10And20CashRule?`Dynamic cash: ${st.between10And20CashRule}`:"-";$("m20Note").textContent=st.after20Allocation?`${st.after20Allocation} allocation`:"-";
-  $("m5").textContent=cur>=5?"Already reached":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
-  $("m10").textContent=cur>=10?"Already reached":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
-  $("m20").textContent=cur>=20?"Already reached":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
+  const reached5=getMilestoneReachedDate(5),reached10=getMilestoneReachedDate(10),reached20=getMilestoneReachedDate(20);
+  $("m5").textContent=reached5?`Reached ${fmtFullDate(reached5)}`:cur>=5?"Already reached":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
+  $("m10").textContent=reached10?`Reached ${fmtFullDate(reached10)}`:cur>=10?"Already reached":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
+  $("m20").textContent=reached20?`Reached ${fmtFullDate(reached20)}`:cur>=20?"Already reached":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
   renderHistory();drawChart();drawTargetDateChart();
 }
 
