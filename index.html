@@ -28,7 +28,7 @@
   details.assumptions>summary::after{content:"▼";float:right;color:var(--muted);font-size:12px;transition:transform .2s ease}
   details.assumptions[open]>summary{margin-bottom:10px}
   details.assumptions[open]>summary::after{transform:rotate(180deg)}
-  .assumptions,.chart-card,.milestones,.history,.note{grid-column:1/-1}
+  .assumptions,.chart-card,.milestones,.history,.target-date-card,.note{grid-column:1/-1}
   .assumption-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .assumption{background:#0a1017;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
   .assumption strong{display:block;font-size:16px;margin-top:3px}
@@ -105,16 +105,28 @@
       <div class="history-list" id="historyList"></div>
     </section>
 
+    <section class="card target-date-card">
+      <div class="section-title">20억 예상 도달일 변화</div>
+      <div class="label" style="margin-bottom:10px">각 실제 자산 기록 시점에서 동일한 현재 가정을 적용해 계산한 20억 예상일입니다.</div>
+      <canvas id="targetDateChart"></canvas>
+      <div class="legend"><span><i class="dot b"></i>20억 예상 도달일</span></div>
+      <div class="empty" id="targetDateEmpty" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
+    </section>
+
     <section class="note">
+      ※ 예상경로는 일정한 연평균 수익률과 월 추가입금을 가정한 단순 복리 시뮬레이션입니다. 실제 투자전략의 수익률은 매년 크게 달라질 수 있습니다.
+      이 페이지는 읽기 전용이며 브라우저에 데이터를 저장하지 않습니다. 공개값 수정은 data.json에서만 합니다.
     </section>
   </div>
-  <div class="footer">Asset Goal Dashboard v8 · GitHub Pages + data.json</div>
+  <div class="footer">Asset Goal Dashboard v9 · GitHub Pages + data.json</div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const canvas = $("chart");
 const ctx = canvas.getContext("2d");
+const targetDateCanvas = $("targetDateChart");
+const targetDateCtx = targetDateCanvas.getContext("2d");
 let DATA = null;
 
 function wonText(eok){
@@ -126,6 +138,8 @@ function parseDate(s){ const d=new Date(`${s}T00:00:00`); return isNaN(d)?null:d
 function addMonths(date,months){ const d=new Date(date); d.setMonth(d.getMonth()+months); return d; }
 function fmtDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`; }
 function monthDiff(a,b){ return (b-a)/(1000*60*60*24*30.4375); }
+function monthSerial(d){ return d.getFullYear()*12+d.getMonth(); }
+function dateFromMonthSerial(v){ const y=Math.floor(v/12),m=v%12; return new Date(y,m,1); }
 
 function getHistory(){
   const rows=Array.isArray(DATA?.history)?DATA.history:[];
@@ -203,6 +217,76 @@ function drawChart(){
   if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2.2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
 }
 
+function resizeTargetDateCanvas(){
+  const rect=targetDateCanvas.getBoundingClientRect();
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  targetDateCanvas.width=Math.floor(rect.width*dpr);
+  targetDateCanvas.height=Math.floor(rect.height*dpr);
+  targetDateCtx.setTransform(dpr,0,0,dpr,0,0);
+}
+function drawTargetDateChart(){
+  if(!DATA)return;
+  const rows=getHistory();
+  const empty=$("targetDateEmpty");
+  if(rows.length<2){
+    targetDateCanvas.style.display="none";
+    empty.style.display="block";
+    return;
+  }
+  targetDateCanvas.style.display="block";
+  empty.style.display="none";
+  resizeTargetDateCanvas();
+  const rect=targetDateCanvas.getBoundingClientRect(),W=rect.width,H=rect.height;
+  const c=targetDateCtx;
+  c.clearRect(0,0,W,H);
+  const pad={l:62,r:14,t:20,b:34},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const s=DATA.settings||{};
+  const target=Number(s.targetAssetEok)||20,r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0;
+  const pts=rows.map(row=>{
+    const d=parseDate(row.date);
+    const m=calcMonthsToTarget(row.assetEok,target,r,dep);
+    const arrival=isFinite(m)?addMonths(d,m):null;
+    return {record:d,arrival,serial:arrival?monthSerial(arrival):null};
+  }).filter(p=>p.arrival);
+  if(pts.length<2){
+    targetDateCanvas.style.display="none";
+    empty.style.display="block";
+    empty.textContent="현재 가정으로 20억 예상일을 계산할 수 있는 기록이 2개 이상 필요합니다.";
+    return;
+  }
+  const minX=pts[0].record,maxX=pts[pts.length-1].record;
+  const totalX=Math.max(1,maxX-minX);
+  let minY=Math.min(...pts.map(p=>p.serial)),maxY=Math.max(...pts.map(p=>p.serial));
+  if(minY===maxY){minY-=1;maxY+=1;}
+  const margin=Math.max(1,Math.ceil((maxY-minY)*0.12));
+  minY-=margin;maxY+=margin;
+  const x=d=>pad.l+((d-minX)/totalX)*cw;
+  const y=v=>pad.t+ch-((v-minY)/(maxY-minY))*ch;
+
+  c.strokeStyle="#24303b";c.lineWidth=1;c.fillStyle="#8794a3";c.font="11px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";
+  c.textAlign="right";c.textBaseline="middle";
+  for(let i=0;i<=4;i++){
+    const val=minY+(maxY-minY)*i/4, yy=y(val);
+    c.beginPath();c.moveTo(pad.l,yy);c.lineTo(W-pad.r,yy);c.stroke();
+    c.fillText(fmtDate(dateFromMonthSerial(Math.round(val))),pad.l-7,yy);
+  }
+  c.textAlign="center";c.textBaseline="top";
+  for(let i=0;i<=Math.min(4,pts.length-1);i++){
+    const idx=Math.round(i*(pts.length-1)/Math.min(4,pts.length-1));
+    const p=pts[idx], xx=x(p.record);
+    c.fillText(`${p.record.getFullYear()}.${String(p.record.getMonth()+1).padStart(2,"0")}`,xx,H-pad.b+8);
+  }
+  const linePts=pts.map(p=>({x:x(p.record),y:y(p.serial)}));
+  c.save();c.strokeStyle="#4da3ff";c.lineWidth=3;c.beginPath();linePts.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.stroke();c.restore();
+  linePts.forEach((p,i)=>{
+    c.fillStyle="#4da3ff";c.beginPath();c.arc(p.x,p.y,3.8,0,Math.PI*2);c.fill();
+    if(i===linePts.length-1){
+      c.fillStyle="#f4f7fb";c.font="11px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";c.textAlign="right";c.textBaseline="bottom";
+      c.fillText(fmtDate(pts[i].arrival),Math.min(W-pad.r,p.x+34),Math.max(pad.t+12,p.y-8));
+    }
+  });
+}
+
 function renderHistory(){
   const list=$("historyList"),rows=getHistory();list.innerHTML="";
   if(!rows.length){list.innerHTML='<div class="empty">기록 없음 · data.json의 history 배열에 기록을 추가하세요.</div>';return;}
@@ -229,7 +313,7 @@ function update(){
   $("m5").textContent=cur>=5?"이미 달성":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
   $("m10").textContent=cur>=10?"이미 달성":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
   $("m20").textContent=cur>=20?"이미 달성":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
-  renderHistory();drawChart();
+  renderHistory();drawChart();drawTargetDateChart();
 }
 
 async function loadData(){
@@ -243,7 +327,7 @@ async function loadData(){
     console.error(err);
   }
 }
-window.addEventListener("resize",()=>DATA&&drawChart());
+window.addEventListener("resize",()=>{if(DATA){drawChart();drawTargetDateChart();}});
 loadData();
 </script>
 </body>
