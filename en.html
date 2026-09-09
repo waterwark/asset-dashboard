@@ -106,39 +106,44 @@
       <div class="history-list" id="historyList"></div>
     </section>
 
-
     <section class="card target-date-card">
       <div class="section-title">Projected KRW 2B Date Trend</div>
       <div class="label" style="margin-bottom:10px">For each actual asset record, this shows the projected KRW 2B date using the same current assumptions.</div>
-      <canvas id="targetDateChart"></canvas>
+      <canvas id="targetDateChart20"></canvas>
       <div class="legend"><span><i class="dot b"></i>Projected KRW 2B Date</span></div>
-      <div class="empty" id="targetDateEmpty" style="display:none">The trend will appear after at least two actual asset records are available.</div>
+      <div class="empty" id="targetDateEmpty20" style="display:none">The trend will appear after at least two actual asset records are available.</div>
     </section>
 
-    <section class="note">
-      ※ The projected path is a simple compound-growth simulation assuming a constant annual return and monthly contribution. Actual investment returns can vary significantly from year to year.
-      This page is read-only and does not store data in the browser. Public values are changed only in data.json.
+    <section class="card target-date-card">
+      <div class="section-title">Projected KRW 1B Date Trend</div>
+      <div class="label" style="margin-bottom:10px">For each actual asset record, this shows the projected KRW 1B date using the same current assumptions.</div>
+      <canvas id="targetDateChart10"></canvas>
+      <div class="legend"><span><i class="dot b"></i>Projected KRW 1B Date</span></div>
+      <div class="empty" id="targetDateEmpty10" style="display:none">The trend will appear after at least two actual asset records are available.</div>
     </section>
+
+    <section class="card target-date-card">
+      <div class="section-title">Projected KRW 500M Date Trend</div>
+      <div class="label" style="margin-bottom:10px">For each actual asset record, this shows the projected KRW 500M date using the same current assumptions.</div>
+      <canvas id="targetDateChart5"></canvas>
+      <div class="legend"><span><i class="dot b"></i>Projected KRW 500M Date</span></div>
+      <div class="empty" id="targetDateEmpty5" style="display:none">The trend will appear after at least two actual asset records are available.</div>
+    </section>
+
+    <section class="note">※ The projected path is a simple compound-growth simulation assuming a constant annual return and monthly contribution. Actual investment returns can vary significantly from year to year. This page is read-only and does not store data in the browser. Public values are changed only in data.json.</section>
   </div>
-  <div class="footer">Asset Goal Dashboard v10 · GitHub Pages + data.json</div>
+  <div class="footer">Asset Goal Dashboard v11 · GitHub Pages + data.json</div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
 const canvas = $("chart");
 const ctx = canvas.getContext("2d");
-const targetDateCanvas = $("targetDateChart");
-const targetDateCtx = targetDateCanvas.getContext("2d");
 let DATA = null;
 
 function wonText(eok){
   if(!isFinite(eok)) return "-";
-  if(eok >= 10){
-    const b=Math.round((eok/10)*100)/100;
-    return `₩${b.toLocaleString("en-US")}B`;
-  }
-  const m=Math.round(eok*100);
-  return `₩${m.toLocaleString("en-US")}M`;
+  if(eok >= 10){ const b=Math.round((eok/10)*100)/100; return `₩${b.toLocaleString("en-US")}B`; } const m=Math.round(eok*100); return `₩${m.toLocaleString("en-US")}M`;
 }
 function parseDate(s){ const d=new Date(`${s}T00:00:00`); return isNaN(d)?null:d; }
 function addMonths(date,months){ const d=new Date(date); d.setMonth(d.getMonth()+months); return d; }
@@ -146,7 +151,7 @@ function fmtDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.ge
 function fmtFullDate(d){ if(!d) return "-"; return `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}.${String(d.getDate()).padStart(2,"0")}`; }
 function monthDiff(a,b){ return (b-a)/(1000*60*60*24*30.4375); }
 function monthSerial(d){ return d.getFullYear()*12+d.getMonth(); }
-function dateFromMonthSerial(v){ const y=Math.floor(v/12),m=v%12; return new Date(y,m,1); }
+function dateFromMonthSerial(v){ const y=Math.floor(v/12),m=((v%12)+12)%12; return new Date(y,m,1); }
 
 function getHistory(){
   const rows=Array.isArray(DATA?.history)?DATA.history:[];
@@ -193,7 +198,9 @@ function resizeCanvas(){
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
 function drawLine(points,color,width=2.5,dashed=false){
-  if(!points.length)return;ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;if(dashed)ctx.setLineDash([6,6]);ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.restore();
+  if(!points.length)return;
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=width;if(dashed)ctx.setLineDash([6,6]);
+  ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.stroke();ctx.restore();
 }
 function drawChart(){
   if(!DATA)return;
@@ -219,7 +226,10 @@ function drawChart(){
   const y=v=>pad.t+ch-(v/maxY)*ch;
 
   ctx.strokeStyle="#24303b";ctx.lineWidth=1;ctx.fillStyle="#8794a3";ctx.font="11px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif";ctx.textAlign="right";ctx.textBaseline="middle";
-  for(let i=0;i<=4;i++){const val=maxY*i/4,yy=y(val);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.fillText(wonText(val),pad.l-7,yy);}
+  for(let i=0;i<=4;i++){
+    const val=maxY*i/4,yy=y(val);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();
+    ctx.fillText(wonText(val),pad.l-7,yy);
+  }
   ctx.textAlign="center";ctx.textBaseline="top";
   for(let i=0;i<=4;i++){const d=new Date(firstDate.getTime()+(projEnd-firstDate)*i/4),xx=xDate(d);ctx.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`,xx,H-pad.b+8);}
   const milestoneLine=(val,color,label)=>{if(val>maxY)return;const yy=y(val);ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.textAlign="left";ctx.textBaseline="bottom";ctx.fillText(label,pad.l+6,yy-4);ctx.restore();};
@@ -228,43 +238,38 @@ function drawChart(){
   if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2.2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
 }
 
-function resizeTargetDateCanvas(){
-  const rect=targetDateCanvas.getBoundingClientRect();
-  const dpr=Math.max(1,window.devicePixelRatio||1);
-  targetDateCanvas.width=Math.floor(rect.width*dpr);
-  targetDateCanvas.height=Math.floor(rect.height*dpr);
-  targetDateCtx.setTransform(dpr,0,0,dpr,0,0);
-}
-function drawTargetDateChart(){
+function drawTargetDateChart(canvasId, emptyId, targetEok){
   if(!DATA)return;
+  const targetCanvas=$(canvasId), empty=$(emptyId);
   const rows=getHistory();
-  const empty=$("targetDateEmpty");
-  if(rows.length<2){
-    targetDateCanvas.style.display="none";
-    empty.style.display="block";
-    return;
-  }
-  targetDateCanvas.style.display="block";
-  empty.style.display="none";
-  resizeTargetDateCanvas();
-  const rect=targetDateCanvas.getBoundingClientRect(),W=rect.width,H=rect.height;
-  const c=targetDateCtx;
+  if(rows.length<2){ targetCanvas.style.display="none";empty.style.display="block";return; }
+  targetCanvas.style.display="block";empty.style.display="none";
+
+  const rect=targetCanvas.getBoundingClientRect();
+  const dpr=Math.max(1,window.devicePixelRatio||1);
+  targetCanvas.width=Math.floor(rect.width*dpr);
+  targetCanvas.height=Math.floor(rect.height*dpr);
+  const c=targetCanvas.getContext("2d");
+  c.setTransform(dpr,0,0,dpr,0,0);
+
+  const W=rect.width,H=rect.height;
   c.clearRect(0,0,W,H);
   const pad={l:62,r:14,t:20,b:34},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
   const s=DATA.settings||{};
-  const target=Number(s.targetAssetEok)||20,r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0;
+  const r=Number(s.annualReturnPct)||0,dep=Number(s.monthlyDepositMan)||0;
   const pts=rows.map(row=>{
     const d=parseDate(row.date);
-    const m=calcMonthsToTarget(row.assetEok,target,r,dep);
+    const m=calcMonthsToTarget(row.assetEok,targetEok,r,dep);
     const arrival=isFinite(m)?addMonths(d,m):null;
     return {record:d,arrival,serial:arrival?monthSerial(arrival):null};
   }).filter(p=>p.arrival);
+
   if(pts.length<2){
-    targetDateCanvas.style.display="none";
-    empty.style.display="block";
-    empty.textContent="At least two records with a calculable KRW 2B projected date are required.";
+    targetCanvas.style.display="none";empty.style.display="block";
+    empty.textContent=`At least two records with a calculable ${targetEok===20?'KRW 2B':targetEok===10?'KRW 1B':'KRW 500M'} projected date are required.`;
     return;
   }
+
   const minX=pts[0].record,maxX=pts[pts.length-1].record;
   const totalX=Math.max(1,maxX-minX);
   let minY=Math.min(...pts.map(p=>p.serial)),maxY=Math.max(...pts.map(p=>p.serial));
@@ -282,8 +287,9 @@ function drawTargetDateChart(){
     c.fillText(fmtDate(dateFromMonthSerial(Math.round(val))),pad.l-7,yy);
   }
   c.textAlign="center";c.textBaseline="top";
-  for(let i=0;i<=Math.min(4,pts.length-1);i++){
-    const idx=Math.round(i*(pts.length-1)/Math.min(4,pts.length-1));
+  const tickDen=Math.min(4,pts.length-1);
+  for(let i=0;i<=tickDen;i++){
+    const idx=Math.round(i*(pts.length-1)/tickDen);
     const p=pts[idx], xx=x(p.record);
     c.fillText(`${p.record.getFullYear()}.${String(p.record.getMonth()+1).padStart(2,"0")}`,xx,H-pad.b+8);
   }
@@ -298,6 +304,12 @@ function drawTargetDateChart(){
   });
 }
 
+function drawAllTargetDateCharts(){
+  drawTargetDateChart("targetDateChart20","targetDateEmpty20",20);
+  drawTargetDateChart("targetDateChart10","targetDateEmpty10",10);
+  drawTargetDateChart("targetDateChart5","targetDateEmpty5",5);
+}
+
 function renderHistory(){
   const list=$("historyList"),rows=getHistory();list.innerHTML="";
   if(!rows.length){list.innerHTML='<div class="empty">No records · add entries to the history array in data.json.</div>';return;}
@@ -310,24 +322,45 @@ function update(){
   const aggressive=(Number(s.aggressiveSharePct)||60)/100;
   const incomeUse=(Number(s.incomeUsePctOfExpectedReturn)||80)/100;
   const hist=getHistory(),latest=hist.length?hist[hist.length-1]:null;
+
   $("currentDisplay").textContent=wonText(cur);$("targetDisplay").textContent=wonText(target);
   $("updatedDisplay").textContent=latest?`Last updated: ${fmtFullDate(parseDate(latest.date))}`:"Last updated: no history";
-  const pct=Math.min(100,target?cur/target*100:0);$("progressBar").style.width=`${pct}%`;$("progressText").textContent=`${pct.toFixed(1)}% reached`;$("remainingText").textContent=cur>=target?"Goal reached":`${wonText(target-cur)} remaining`;
-  const fillMilestone=(milestone,yearsId,monthsId,dateId)=>{const m=calcMonthsToTarget(cur,milestone,r,dep);$(yearsId).textContent=durationText(m);$(monthsId).textContent=cur>=milestone?`${wonText(milestone)} or more`:isFinite(m)?`From current assets · ${m} months`:"Check return/contribution";$(dateId).textContent=cur>=milestone?"Already reached":isFinite(m)?fmtDate(addMonths(baseDate,m)):"-";return m;};
+  const pct=Math.min(100,target?cur/target*100:0);
+  $("progressBar").style.width=`${pct}%`;
+  $("progressText").textContent=`${pct.toFixed(1)}% reached`;
+  $("remainingText").textContent=cur>=target?"Goal reached":`${wonText(target-cur)} remaining`;
+
+  const fillMilestone=(milestone,yearsId,monthsId,dateId)=>{
+    const m=calcMonthsToTarget(cur,milestone,r,dep);
+    $(yearsId).textContent=durationText(m);
+    $(monthsId).textContent=cur>=milestone?`At or above ${milestone===5?'KRW 500M':milestone===10?'KRW 1B':'KRW 2B'}`:isFinite(m)?`From current assets · ${m} months`:"Check return / contribution";
+    $(dateId).textContent=cur>=milestone?"Already reached":isFinite(m)?fmtDate(addMonths(baseDate,m)):"-";
+    return m;
+  };
+
   const m5=fillMilestone(5,"years5Display","months5Display","date5Display");
   const m10=fillMilestone(10,"years10Display","months10Display","date10Display");
-  const mt=fillMilestone(target,"yearsDisplay","monthsDisplay","dateDisplay");
+  fillMilestone(target,"yearsDisplay","monthsDisplay","dateDisplay");
+
   const incomeMan=target*10000*aggressive*(r/100)*incomeUse/12;
   $("incomeDisplay").textContent=`₩${Math.round(incomeMan*10000).toLocaleString("en-US")}/month`;
-  $("incomeNote").textContent=`${wonText(target)} × aggressive allocation ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return ÷ 12 · before tax`;
-  $("returnDisplay").textContent=`${r}%`;$("depositDisplay").textContent=`₩${Math.round(dep*10000).toLocaleString("en-US")}/month`;
-  $("under10Rule").textContent=st.under10CashRule||"-";$("betweenRule").textContent=st.between10And20CashRule||"-";$("allocationRule").textContent=st.after20Allocation||"-";$("incomeRule").textContent=`Aggressive ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return`;
-  $("m10Note").textContent=st.between10And20CashRule?`Dynamic cash: ${st.between10And20CashRule}`:"-";$("m20Note").textContent=st.after20Allocation?`${st.after20Allocation} allocation`:"-";
+  $("incomeNote").textContent=`${wonText(target)} × aggressive share ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return ÷ 12 · pre-tax`;
+  $("returnDisplay").textContent=`${r}%`;
+  $("depositDisplay").textContent=`₩${Math.round(dep*10000).toLocaleString("en-US")}/month`;
+  $("under10Rule").textContent=st.under10CashRule||"-";
+  $("betweenRule").textContent=st.between10And20CashRule||"-";
+  $("allocationRule").textContent=st.after20Allocation||"-";
+  $("incomeRule").textContent=`Aggressive ${Math.round(aggressive*100)}% × ${Math.round(incomeUse*100)}% of expected return`;
+  $("m10Note").textContent=st.between10And20CashRule?`Dynamic cash: ${st.between10And20CashRule}`:"-";
+  $("m20Note").textContent=st.after20Allocation?`${st.after20Allocation} allocation`:"-";
+
   const reached5=getMilestoneReachedDate(5),reached10=getMilestoneReachedDate(10),reached20=getMilestoneReachedDate(20);
   $("m5").textContent=reached5?`Reached ${fmtFullDate(reached5)}`:cur>=5?"Already reached":isFinite(m5)?fmtDate(addMonths(baseDate,m5)):"-";
   $("m10").textContent=reached10?`Reached ${fmtFullDate(reached10)}`:cur>=10?"Already reached":isFinite(m10)?fmtDate(addMonths(baseDate,m10)):"-";
-  $("m20").textContent=reached20?`Reached ${fmtFullDate(reached20)}`:cur>=20?"Already reached":isFinite(calcMonthsToTarget(cur,20,r,dep))?fmtDate(addMonths(baseDate,calcMonthsToTarget(cur,20,r,dep))):"-";
-  renderHistory();drawChart();drawTargetDateChart();
+  const m20=calcMonthsToTarget(cur,20,r,dep);
+  $("m20").textContent=reached20?`Reached ${fmtFullDate(reached20)}`:cur>=20?"Already reached":isFinite(m20)?fmtDate(addMonths(baseDate,m20)):"-";
+
+  renderHistory();drawChart();drawAllTargetDateCharts();
 }
 
 async function loadData(){
@@ -337,11 +370,12 @@ async function loadData(){
     DATA=await res.json();
     update();
   }catch(err){
-    const box=$("errorBox");box.style.display="block";box.textContent="Could not load data.json. On GitHub Pages, place en.html and data.json in the same folder. Opening the file directly with file:// may block fetch because of browser security policies.";
+    const box=$("errorBox");box.style.display="block";
+    box.textContent="Could not load data.json. On GitHub Pages, place en.html and data.json in the same folder. Opening the file directly with file:// may block fetch because of browser security policies.";
     console.error(err);
   }
 }
-window.addEventListener("resize",()=>{if(DATA){drawChart();drawTargetDateChart();}});
+window.addEventListener("resize",()=>{if(DATA){drawChart();drawAllTargetDateCharts();}});
 loadData();
 </script>
 </body>
