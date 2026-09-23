@@ -106,6 +106,11 @@
       <div class="history-list" id="historyList"></div>
     </section>
 
+    <section class="card history-chart-card">
+      <div class="section-title">Actual Asset History Chart</div>
+      <canvas id="actualHistoryChart"></canvas>
+      <div class="legend"><span><i class="dot g"></i>Actual Assets</span></div>
+    </section>
     <section class="card target-date-card">
       <div class="section-title">Projected KRW 500M Date Trend</div>
       <div class="label" style="margin-bottom:10px">For each actual asset record, this shows the projected KRW 500M date using the same current assumptions.</div>
@@ -240,6 +245,35 @@ function drawChart(){
   if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
 }
 
+
+function drawActualHistoryChart(){
+  if(!DATA)return;
+  const c=$("actualHistoryChart"),rows=getHistory();
+  const rect=c.getBoundingClientRect(),dpr=Math.max(1,window.devicePixelRatio||1);
+  c.width=Math.floor(rect.width*dpr);c.height=Math.floor(rect.height*dpr);
+  const c2=c.getContext("2d");c2.setTransform(dpr,0,0,dpr,0,0);
+  const W=rect.width,H=rect.height;c2.clearRect(0,0,W,H);
+  if(!rows.length)return;
+  const pad={l:52,r:16,t:20,b:36},cw=W-pad.l-pad.r,ch=H-pad.t-pad.b;
+  const minDate=parseDate(rows[0].date),maxDate=parseDate(rows[rows.length-1].date);
+  const span=Math.max(1,maxDate-minDate);
+  let minY=Math.min(...rows.map(r=>r.assetEok)),maxY=Math.max(...rows.map(r=>r.assetEok));
+  if(minY===maxY){minY=Math.max(0,minY-1);maxY+=1;}
+  const margin=Math.max(.5,(maxY-minY)*.12);minY=Math.max(0,minY-margin);maxY+=margin;
+  const x=d=>pad.l+((d-minDate)/span)*cw, y=v=>pad.t+ch-((v-minY)/(maxY-minY))*ch;
+  c2.strokeStyle="#24303b";c2.lineWidth=1;c2.fillStyle="#8794a3";
+  c2.font='11px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif';
+  c2.textAlign="right";c2.textBaseline="middle";
+  for(let i=0;i<=4;i++){const val=minY+(maxY-minY)*i/4,yy=y(val);c2.beginPath();c2.moveTo(pad.l,yy);c2.lineTo(W-pad.r,yy);c2.stroke();c2.fillText((Math.round(val*10)/10)+"B",pad.l-7,yy);}
+  c2.textAlign="center";c2.textBaseline="top";
+  const ticks=Math.min(4,rows.length-1);
+  for(let i=0;i<=ticks;i++){const row=rows[Math.round(i*(rows.length-1)/ticks)],xx=x(parseDate(row.date));c2.fillText(row.date.slice(0,7).replace("-","."),xx,H-pad.b+8);}
+  const pts=rows.map(r=>({x:x(parseDate(r.date)),y:y(r.assetEok)}));
+  c2.save();c2.strokeStyle="#49d17d";c2.lineWidth=2;c2.setLineDash([]);c2.beginPath();
+  pts.forEach((p,i)=>i?c2.lineTo(p.x,p.y):c2.moveTo(p.x,p.y));c2.stroke();c2.restore();
+  pts.forEach(p=>{c2.fillStyle="#49d17d";c2.beginPath();c2.arc(p.x,p.y,3.5,0,Math.PI*2);c2.fill();});
+}
+
 function drawTargetDateChart(canvasId, emptyId, targetEok){
   if(!DATA)return;
   const targetCanvas=$(canvasId), empty=$(emptyId);
@@ -363,7 +397,7 @@ function update(){
   const m20=calcMonthsToTarget(cur,20,r,dep);
   $("m20").textContent=reached20?`Reached ${fmtFullDate(reached20)}`:cur>=20?"Already reached":isFinite(m20)?fmtDate(addMonths(baseDate,m20)):"-";
 
-  renderHistory();drawChart();drawAllTargetDateCharts();
+  renderHistory();drawChart();drawActualHistoryChart();drawAllTargetDateCharts();
 }
 
 async function loadData(){
@@ -378,7 +412,7 @@ async function loadData(){
     console.error(err);
   }
 }
-window.addEventListener("resize",()=>{if(DATA){drawChart();drawAllTargetDateCharts();}});
+window.addEventListener("resize",()=>{if(DATA){drawChart();drawActualHistoryChart();drawAllTargetDateCharts();}});
 loadData();
 </script>
 </body>
