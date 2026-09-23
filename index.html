@@ -228,7 +228,9 @@ function drawChart(){
   let a=cur;const proj=[];
   for(let m=0;m<=horizonMonths;m++){ if(m>0)a=a*(1+monthlyRate)+depEok;proj.push({d:addMonths(baseDate,m),asset:a}); }
   const allAssets=[target,...hist.map(h=>h.asset),...proj.map(p=>p.asset)];
-  let maxY=Math.max(...allAssets)*1.08;
+  // Y축은 현재 자산 구간에 따라 목표 구간을 확대해 표시
+  // 8억 이하: 10억 근처(0~12억), 8억 초과: 20억 근처(0~24억)
+  let maxY=cur<=8?12:24;
   const xDate=d=>pad.l+(Math.max(0,Math.min(totalMonths,monthDiff(firstDate,d)))/totalMonths)*cw;
   const y=v=>pad.t+ch-(v/maxY)*ch;
 
