@@ -296,7 +296,7 @@ function drawTargetDateChart(canvasId, emptyId, targetEok){
     c.fillText(`${p.record.getFullYear()}.${String(p.record.getMonth()+1).padStart(2,"0")}`,xx,H-pad.b+8);
   }
   const linePts=pts.map(p=>({x:x(p.record),y:y(p.serial)}));
-  c.save();c.strokeStyle="#4da3ff";c.lineWidth=1.5;c.setLineDash([]);c.beginPath();linePts.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.stroke();c.restore();
+  c.save();c.strokeStyle="#4da3ff";c.lineWidth=2;c.setLineDash([]);c.beginPath();linePts.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.stroke();c.restore();
   linePts.forEach((p,i)=>{
     c.fillStyle="#4da3ff";c.beginPath();c.arc(p.x,p.y,3.8,0,Math.PI*2);c.fill();
     if(i===linePts.length-1){
