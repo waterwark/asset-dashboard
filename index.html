@@ -37,7 +37,7 @@
   .dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:5px}.b{background:var(--accent)}.g{background:var(--good)}.y{background:var(--warn)}
   .mile{display:grid;grid-template-columns:72px 1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
   .mile:last-child{border-bottom:none}.mile strong{font-size:14px}.mile small{color:var(--muted)}.date{font-weight:750;font-size:13px}
-  .history-list{display:flex;flex-direction:column;gap:7px}.hitem{display:flex;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid var(--line);background:#0a1017;border-radius:10px;font-size:12px}
+  .history-list{display:flex;flex-direction:column;gap:7px}.hitem{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:9px 10px;border:1px solid var(--line);background:#0a1017;border-radius:10px;font-size:12px}.hhead{color:var(--muted);font-size:11px;border:none;background:transparent;padding:2px 10px}.hhead strong{font-weight:500}
   .empty{color:var(--muted);font-size:12px;padding:9px 0}
   .note{color:var(--muted);font-size:12px;line-height:1.55}
   .error{display:none;grid-column:1/-1;background:rgba(255,107,107,.08);border:1px solid rgba(255,107,107,.45);color:#ffb3b3;border-radius:14px;padding:12px;font-size:13px;line-height:1.5}
@@ -103,23 +103,8 @@
     <section class="card history">
       <div class="section-title">실제 자산 기록</div>
       <div class="label">data.json의 history 배열을 날짜순으로 표시합니다. 가장 최근 기록이 현재 자산보다 우선합니다.</div>
+      <div class="history-list hhead"><span>날짜</span><span>자산</span><span>목표 달성</span></div>
       <div class="history-list" id="historyList"></div>
-    </section>
-
-    <section class="card target-date-card">
-      <div class="section-title">20억 예상 도달일 변화</div>
-      <div class="label" style="margin-bottom:10px">각 실제 자산 기록 시점에서 동일한 현재 가정을 적용해 계산한 20억 예상일입니다.</div>
-      <canvas id="targetDateChart20"></canvas>
-      <div class="legend"><span><i class="dot b"></i>20억 예상 도달일</span></div>
-      <div class="empty" id="targetDateEmpty20" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
-    </section>
-
-    <section class="card target-date-card">
-      <div class="section-title">10억 예상 도달일 변화</div>
-      <div class="label" style="margin-bottom:10px">각 실제 자산 기록 시점에서 동일한 현재 가정을 적용해 계산한 10억 예상일입니다.</div>
-      <canvas id="targetDateChart10"></canvas>
-      <div class="legend"><span><i class="dot b"></i>10억 예상 도달일</span></div>
-      <div class="empty" id="targetDateEmpty10" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
     </section>
 
     <section class="card target-date-card">
@@ -129,7 +114,20 @@
       <div class="legend"><span><i class="dot b"></i>5억 예상 도달일</span></div>
       <div class="empty" id="targetDateEmpty5" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
     </section>
-
+    <section class="card target-date-card">
+      <div class="section-title">10억 예상 도달일 변화</div>
+      <div class="label" style="margin-bottom:10px">각 실제 자산 기록 시점에서 동일한 현재 가정을 적용해 계산한 10억 예상일입니다.</div>
+      <canvas id="targetDateChart10"></canvas>
+      <div class="legend"><span><i class="dot b"></i>10억 예상 도달일</span></div>
+      <div class="empty" id="targetDateEmpty10" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
+    </section>
+    <section class="card target-date-card">
+      <div class="section-title">20억 예상 도달일 변화</div>
+      <div class="label" style="margin-bottom:10px">각 실제 자산 기록 시점에서 동일한 현재 가정을 적용해 계산한 20억 예상일입니다.</div>
+      <canvas id="targetDateChart20"></canvas>
+      <div class="legend"><span><i class="dot b"></i>20억 예상 도달일</span></div>
+      <div class="empty" id="targetDateEmpty20" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
+    </section>
     <section class="note">※ 예상경로는 일정한 연평균 수익률과 월 추가입금을 가정한 단순 복리 시뮬레이션입니다. 실제 투자전략의 수익률은 매년 크게 달라질 수 있습니다. 이 페이지는 읽기 전용이며 브라우저에 데이터를 저장하지 않습니다. 공개값 수정은 data.json에서만 합니다.</section>
   </div>
   <div class="footer">Asset Goal Dashboard v11 · GitHub Pages + data.json</div>
@@ -313,7 +311,8 @@ function drawAllTargetDateCharts(){
 function renderHistory(){
   const list=$("historyList"),rows=getHistory();list.innerHTML="";
   if(!rows.length){list.innerHTML='<div class="empty">기록 없음 · data.json의 history 배열에 기록을 추가하세요.</div>';return;}
-  [...rows].reverse().forEach(r=>{const div=document.createElement("div");div.className="hitem";div.innerHTML=`<span>${r.date}</span><strong>${wonText(r.assetEok)}</strong>`;list.appendChild(div);});
+  const target=Number(DATA?.settings?.targetAssetEok)||20;
+   [...rows].reverse().forEach(r=>{const div=document.createElement("div");div.className="hitem";const pct=target>0?(r.assetEok/target*100):0;div.innerHTML=`<span>${r.date}</span><strong>${wonText(r.assetEok)}</strong><strong>${pct.toFixed(1)}%</strong>`;list.appendChild(div);});
 }
 
 function update(){
