@@ -90,7 +90,7 @@
     <section class="card chart-card">
       <div class="section-title">실제 기록 + 목표 예상 경로</div>
       <canvas id="chart"></canvas>
-      <div class="legend"><span><i class="dot g"></i>실제 자산</span><span><i class="dot b"></i>예상 자산</span><span><i class="dot y"></i>10억</span></div>
+      <div class="legend"><span><i class="dot g"></i>실제 자산</span><span><i class="dot b"></i>예상 자산</span><span id="chartMilestoneLegend"><i class="dot y"></i>5억 · 10억</span></div>
     </section>
 
     <section class="card milestones">
@@ -240,7 +240,15 @@ function drawChart(){
   ctx.textAlign="center";ctx.textBaseline="top";
   for(let i=0;i<=4;i++){const d=new Date(firstDate.getTime()+(projEnd-firstDate)*i/4),xx=xDate(d);ctx.fillText(`${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,"0")}`,xx,H-pad.b+8);}
   const milestoneLine=(val,color,label)=>{if(val>maxY)return;const yy=y(val);ctx.save();ctx.strokeStyle=color;ctx.globalAlpha=.7;ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(pad.l,yy);ctx.lineTo(W-pad.r,yy);ctx.stroke();ctx.globalAlpha=1;ctx.fillStyle=color;ctx.textAlign="left";ctx.textBaseline="bottom";ctx.fillText(label,pad.l+6,yy-4);ctx.restore();};
-  milestoneLine(10,"#ffd166","10억");milestoneLine(target,"#49d17d",`${target}억 목표`);
+  if(cur<=8){
+    milestoneLine(5,"#ffd166","5억");
+    milestoneLine(10,"#ffd166","10억");
+    $("chartMilestoneLegend").innerHTML='<i class="dot y"></i>5억 · 10억';
+  }else{
+    milestoneLine(10,"#ffd166","10억");
+    milestoneLine(20,"#49d17d","20억 목표");
+    $("chartMilestoneLegend").innerHTML='<i class="dot y"></i>10억 · 20억';
+  }
   drawLine(proj.map(p=>({x:xDate(p.d),y:y(p.asset)})),"#4da3ff",3);
   if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2.2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
 }
