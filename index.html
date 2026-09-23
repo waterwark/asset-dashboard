@@ -321,7 +321,7 @@ function renderHistory(){
   const list=$("historyList"),rows=getHistory();list.innerHTML="";
   if(!rows.length){list.innerHTML='<div class="empty">기록 없음 · data.json의 history 배열에 기록을 추가하세요.</div>';return;}
   const target=Number(DATA?.settings?.targetAssetEok)||20;
-  [...rows].reverse().forEach(r=>{const div=document.createElement("div");div.className="hitem";const pct=target>0?Math.min(100,r.assetEok/target*100):0;div.innerHTML=`<span>${r.date}</span><span style="text-align:center">${pct.toFixed(1)}%</span><strong style="text-align:right">${wonText(r.assetEok)}<span class="history-unit">원</span></strong>`;list.appendChild(div);});
+  [...rows].reverse().forEach(r=>{const div=document.createElement("div");div.className="hitem";const pct=target>0?Math.min(100,r.assetEok/target*100):0;div.innerHTML=`<span>${r.date}</span><span style="text-align:center">${pct.toFixed(1)}%<span class="history-unit">달성</span></span><strong style="text-align:right">${wonText(r.assetEok)}<span class="history-unit">만원</span></strong>`;list.appendChild(div);});
 }
 
 function update(){
@@ -331,7 +331,7 @@ function update(){
   const incomeUse=(Number(s.incomeUsePctOfExpectedReturn)||80)/100;
   const hist=getHistory(),latest=hist.length?hist[hist.length-1]:null;
 
-  $("currentDisplay").innerHTML=`${wonText(cur)}<span class="unit">원</span>`;$("targetDisplay").textContent=wonText(target);
+  $("currentDisplay").innerHTML=`${wonText(cur)}<span class="unit">만원</span>`;$("targetDisplay").textContent=wonText(target);
   $("updatedDisplay").textContent=latest?`최근 업데이트: ${fmtFullDate(parseDate(latest.date))}`:"최근 업데이트: 기록 없음";
   const pct=Math.min(100,target?cur/target*100:0);
   $("progressBar").style.width=`${pct}%`;
