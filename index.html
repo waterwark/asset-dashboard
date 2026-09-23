@@ -48,7 +48,7 @@
 <body>
 <div class="wrap">
   <h1>20억 자산 목표</h1>
-  <div class="sub">공개용 읽기 전용 대시보드 · 값은 data.json에서 관리</div>
+  <div class="sub">공개용 읽기 전용 대시보드</div>
 
   <div class="grid">
     <div class="error" id="errorBox"></div>
@@ -103,6 +103,7 @@
     <section class="card history">
       <div class="section-title">실제 자산 기록</div>
       <div class="label">data.json의 history 배열을 날짜순으로 표시합니다. 가장 최근 기록이 현재 자산보다 우선합니다.</div>
+	  <div class="history-header" style="display:grid;grid-template-columns:1fr 90px 120px;gap:10px;padding:0 10px 5px;color:var(--muted);font-size:11px"><span>날짜</span><span style="text-align:center">목표 달성 %</span><span style="text-align:right">자산</span></div>
       <div class="history-list" id="historyList"></div>
     </section>
 
@@ -127,7 +128,7 @@
       <div class="legend"><span><i class="dot b"></i>20억 예상 도달일</span></div>
       <div class="empty" id="targetDateEmpty20" style="display:none">실제 자산 기록이 2개 이상 쌓이면 예상일 변화 추세를 표시합니다.</div>
     </section>
-    <section class="note">※ 예상경로는 일정한 연평균 수익률과 월 추가입금을 가정한 단순 복리 시뮬레이션입니다. 실제 투자전략의 수익률은 매년 크게 달라질 수 있습니다. 이 페이지는 읽기 전용이며 브라우저에 데이터를 저장하지 않습니다. 공개값 수정은 data.json에서만 합니다.</section>
+    <section class="note">※ 예상경로는 일정한 연평균 수익률과 월 추가입금을 가정한 단순 복리 시뮬레이션입니다. 실제 투자전략의 수익률은 매년 크게 달라질 수 있습니다.</section>
   </div>
   <div class="footer">Asset Goal Dashboard v11 · GitHub Pages + data.json</div>
 </div>
