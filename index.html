@@ -246,8 +246,8 @@ function drawChart(){
   milestoneLine(10,"#ffd166","10억");
   milestoneLine(20,"#49d17d","20억 목표");
   $("chartMilestoneLegend").innerHTML='<i class="dot" style="background:#ff6b6b"></i>5억 · <i class="dot y"></i>10억 · <i class="dot g"></i>20억';
-  drawLine(proj.map(p=>({x:xDate(p.d),y:y(p.asset)})),"#4da3ff",3);
-  if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2.2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
+  drawLine(proj.map(p=>({x:xDate(p.d),y:y(p.asset)})),"#4da3ff",1.5);
+  if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",1.5);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
 }
 
 function drawTargetDateChart(canvasId, emptyId, targetEok){
