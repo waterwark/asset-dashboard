@@ -236,8 +236,8 @@ function drawChart(){
   milestoneLine(10,"#ffd166","KRW 1B");
   milestoneLine(20,"#49d17d","KRW 2B Goal");
   $("chartMilestoneLegend").innerHTML='<i class="dot" style="background:#ff6b6b"></i>KRW 500M · <i class="dot y"></i>KRW 1B · <i class="dot g"></i>KRW 2B';
-  drawLine(proj.map(p=>({x:xDate(p.d),y:y(p.asset)})),"#4da3ff",1.5);
-  if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",1.5);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
+  drawLine(proj.map(p=>({x:xDate(p.d),y:y(p.asset)})),"#4da3ff",2);
+  if(hist.length){const pts=hist.map(h=>({x:xDate(h.d),y:y(h.asset)}));drawLine(pts,"#49d17d",2);pts.forEach(p=>{ctx.fillStyle="#49d17d";ctx.beginPath();ctx.arc(p.x,p.y,3.5,0,Math.PI*2);ctx.fill();});}
 }
 
 function drawTargetDateChart(canvasId, emptyId, targetEok){
